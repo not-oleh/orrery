@@ -4,7 +4,8 @@
 // Messages (JSON, one per WebSocket frame):
 //   {"h": [[time, duration(0 = transient), intensity, sharpness, pan -1..1], ...]}   haptic pattern
 //   {"r2": mode, "l2": mode, "rgb": [r,g,b] 0..1, "p": 0..4}                          controller state
-//   mode = ["off"] | ["fb", start, strength] | ["wp", start, end, strength] | ["vb", start, amp, freq]  (all 0..1)
+//   mode = ["off"] | ["fb", start, strength] | ["wp", start, end, strength] | ["vb", start, amp, freq]
+//        | ["mf", s0..s9] (strength at each of 10 positions) | ["sl", start, end, startStrength, endStrength]  (all 0..1)
 import Foundation
 import Network
 import GameController
@@ -72,6 +73,11 @@ final class Pad {
         case ("fb", 2...): t.setModeFeedbackWithStartPosition(f[0], resistiveStrength: f[1])
         case ("wp", 3...): t.setModeWeaponWithStartPosition(f[0], endPosition: f[1], resistiveStrength: f[2])
         case ("vb", 3...): t.setModeVibrationWithStartPosition(f[0], amplitude: f[1], frequency: f[2])
+        case ("mf", 10...):
+            var s = GCDualSenseAdaptiveTrigger.PositionalResistiveStrengths()
+            s.values = (f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7], f[8], f[9])
+            t.setModeFeedback(resistiveStrengths: s)
+        case ("sl", 4...): t.setModeSlopeFeedback(startPosition: f[0], endPosition: f[1], startStrength: f[2], endStrength: f[3])
         default: t.setModeOff()
         }
     }
