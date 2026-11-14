@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Thicket</title>
+<title>Orrery</title>
 <style>
   html,body{margin:0;height:100%;background:#23272b;overflow:hidden}
   canvas{display:block}
@@ -199,7 +199,7 @@ function readInput(){
 const IDLE={mx:0,my:0,aim:null,l2:0,r2:0};
 
 /* ================= persistent progression ================= */
-const SAVE_KEY='thicket-save-v1';
+const SAVE_KEY='thicket-save-v1'; // old name kept so existing saves carry over
 function loadMeta(){
   const d={motes:0,best:0,runs:0,up:{vit:0,reach:0,swift:0},unlocked:['thorn','pulse'],char:'earth'};
   try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s)return{...d,...s,up:{...d.up,...s.up}}}catch(e){}
@@ -742,7 +742,7 @@ async function netHost(){
   netClose();mode='lobby';NET.role='host';NET.status='opening…';
   try{await loadPeer()}catch(e){NET.status=e.message;return}
   NET.code=Array.from({length:4},()=>'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*31)]).join('');
-  NET.peer=new Peer('thicket-'+NET.code,{debug:0});
+  NET.peer=new Peer('orrery-'+NET.code,{debug:0});
   NET.peer.on('open',()=>NET.status='waiting for your partner');
   NET.peer.on('error',peerErr);
   NET.peer.on('connection',c=>{
@@ -758,7 +758,7 @@ async function netJoin(){
   NET.peer=new Peer({debug:0});
   NET.peer.on('error',peerErr);
   NET.peer.on('open',()=>{
-    const c=NET.peer.connect('thicket-'+code,{serialization:'json',reliable:true});NET.conn=c;
+    const c=NET.peer.connect('orrery-'+code,{serialization:'json',reliable:true});NET.conn=c;
     c.on('open',()=>{NET.status='connected · starting';c.send({t:'hello',up:meta.up,unlocked:meta.unlocked})});
     c.on('data',onData);c.on('close',onClose);
   });
@@ -788,7 +788,7 @@ function onData(m){
 }
 function onClose(){
   if(NET.role==='host'){
-    if(R?.coop&&mode==='run'){const q=R.players[1];q.gone=q.down=true;R.banner={text:'your partner left',sub:'the thicket closes in',t:3};if(!alive().length)endRun()}
+    if(R?.coop&&mode==='run'){const q=R.players[1];q.gone=q.down=true;R.banner={text:'your partner left',sub:'you orbit alone now',t:3};if(!alive().length)endRun()}
     NET.conn=null;
   }else if(mode==='run'&&R){NET.lost=true;mode='dead';R.deadT=1;bank(P.runMotes)}
   else if(mode==='lobby')NET.status='connection closed';
@@ -1044,7 +1044,7 @@ function veil(a=.82){g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=`rgba(${PAL.vei
 function drawPause(){veil(.7);text('paused',W/2,H/2,24,PAL.ink,'center',650);text(`${pad?'options':'esc'} to resume`,W/2,H/2+26,13,PAL.muted,'center')}
 function drawDead(){
   veil(.75);
-  text(NET.lost?'connection lost':R.coop?'the thicket took you both':'the thicket took you',W/2,H/2-30,28,PAL.ink,'center',650);
+  text(NET.lost?'connection lost':R.coop?'you both fell out of orbit':'you fell out of orbit',W/2,H/2-30,28,PAL.ink,'center',650);
   text(`reached stage ${R.stage}  ·  gathered ${P.runMotes} ◆`,W/2,H/2+4,15,PAL.muted,'center');
   if(R.deadT<=0)text(`${pad?'✕':'enter'} to return to the grove`,W/2,H/2+44,13,PAL.ink,'center',600);
   if(R.unlock){drawBody(R.unlock,W/2,H/2+84,10,CHARS[R.unlock].col,R.t);text(`${R.unlock} has awakened · choose it in the grove`,W/2,H/2+114,14,CHARS[R.unlock].col,'center',600)}
@@ -1094,8 +1094,8 @@ function grove(dt,I){
   }
   backdrop(dt);
   const rowH=clamp((H-330)/GROVE.length,24,38),cx=W/2,top=Math.max(16,H/2-130-GROVE.length*rowH/2);
-  text('thicket',cx,top+40,46,PAL.ink,'center',700);
-  text('an endless run through the undergrowth. what you gather stays with you.',cx,top+68,14,PAL.muted,'center');
+  text('orrery',cx,top+40,46,PAL.ink,'center',700);
+  text('small worlds against the dark. what you gather stays with you.',cx,top+68,14,PAL.muted,'center');
   const lw=Math.min(460,W-32),lx=cx-lw/2;
   GROVE.forEach((it,i)=>{
     const y=top+100+i*rowH,my=y+rowH/2-3;
