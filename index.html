@@ -20,6 +20,10 @@ const ROMAN=['','i','ii','iii','iv','v'];
 const PAL={paper:'#23272b',ink:'#e9e6df',faint:'#2d3237',faint2:'#383e44',clearing:'#272b30',muted:'#8a9097',white:'#ffffff',
   card:'rgba(20,23,26,.82)',veil:'35,39,43',boss:'#101214',
   red:'#d0644b',mustard:'#dcae4f',sage:'#86a889',plum:'#9a6a8c',slate:'#7489a3',mote:'#3cc0b0'};
+const THEMES={dark:{paper:PAL.paper,ink:PAL.ink,faint:PAL.faint,faint2:PAL.faint2,clearing:PAL.clearing,muted:PAL.muted,card:PAL.card,veil:PAL.veil},
+  light:{paper:'#ece8df',ink:'#2a2e33',faint:'#e0dbd0',faint2:'#d0cabd',clearing:'#e5e1d7',muted:'#767c83',card:'rgba(250,248,243,.9)',veil:'236,232,223'}};
+// PAL is mutated in place since draw code reads it every frame; accents and boss stay the same in both themes
+function setTheme(t){Object.assign(PAL,THEMES[t]);document.documentElement.style.background=document.body.style.background=PAL.paper}
 const PCOL=['#f2c14e','#8fb8de'],PNAME=['sun','moon']; // co-op player colours/names
 // playable bodies. solo starts as earth; moon and sun awaken by how deep you've gone (best stage). co-op: host is sun, guest is moon.
 const CHARS={
@@ -196,7 +200,7 @@ function readInput(){
   I.pickL=edge(4)||tap('KeyQ');I.pickR=edge(5)||tap('KeyE');
   I.pause=edge(9)||tap('Escape','KeyP');
   I.back=edge(1)||tap('Escape');
-  I.mute=tap('KeyM');
+  I.mute=tap('KeyM');I.theme=tap('KeyT');
   I.up=edge(12)||(sy<-.6&&prevSY>=-.6)||tap('ArrowUp','KeyW');
   I.down=edge(13)||(sy>.6&&prevSY<=.6)||tap('ArrowDown','KeyS');
   I.confirm=edge(0)||tap('Enter','Space');
@@ -213,6 +217,7 @@ function loadMeta(){
   return d;
 }
 let meta=loadMeta();
+meta.theme??=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';setTheme(meta.theme);
 const awake=()=>Object.keys(CHARS).filter(k=>meta.best>=CHARS[k].need);
 if(!awake().includes(meta.char))meta.char='earth';
 const saveMeta=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(meta))}catch(e){}};
@@ -1379,7 +1384,7 @@ function grove(dt,I){
   text('move L-stick · aim R-stick · weapons L2 / R2 · dash ✕ · take relic L1 / R1 · pause options',cx,fy+64,12,PAL.muted,'center');
   text('keyboard: WASD · mouse aim · left/right click · shift dash · Q / E take · esc pause',cx,fy+82,12,PAL.muted,'center');
   const hs=native()?'dualsense · native haptics on':NB.ws?'haptics bridge up · no controller':pad?(BRIDGE?'gamepad · basic rumble (run bridge.swift for native haptics)':'gamepad connected'):'no controller · press a button on it to connect';
-  text(`${hs}  ·  ${soundHint()}`,cx,H-18,11,PAL.muted,'center');
+  text(`${hs}  ·  ${soundHint()}  ·  ${meta.theme} · T`,cx,H-18,11,PAL.muted,'center');
 }
 function lobby(I,status){
   if(I.back){toGrove();return}
@@ -1405,6 +1410,7 @@ function frame(now){
   const dt=Math.min(.05,(now-last)/1000);last=now;
   const I=readInput();
   if(I.mute)muted=!muted;
+  if(I.theme){meta.theme=meta.theme==='light'?'dark':'light';setTheme(meta.theme);saveMeta()}
   if(mode==='grove')grove(dt,I);
   else if(mode==='lobby')lobby(I);
   else if(NET.role==='guest'){
