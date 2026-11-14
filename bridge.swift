@@ -28,7 +28,14 @@ final class Pad {
             e.stoppedHandler = { _ in try? e.start() }
             try? e.start()
         }
+        reset() // trigger modes live in the controller and survive a closed page or a killed bridge
         print("controller: \(c.vendorName ?? "?")  engines: \(engines.keys.sorted())")
+    }
+
+    func reset() {
+        guard let ds = ctrl?.extendedGamepad as? GCDualSenseGamepad else { return }
+        ds.leftTrigger.setModeOff()
+        ds.rightTrigger.setModeOff()
     }
 
     func detach(_ c: GCController) {
@@ -140,9 +147,20 @@ func receive(_ c: NWConnection) {
 
 let listener = try NWListener(using: params, on: 8765)
 listener.newConnectionHandler = { c in
+    c.stateUpdateHandler = { s in
+        switch s { case .cancelled, .failed: pad.reset() default: break } // page closed: stop any trigger buzz
+    }
     c.start(queue: .main)
     receive(c)
 }
 listener.start(queue: .main)
+// Ctrl-C / kill: switch the triggers off before exiting
+let quit = [SIGINT, SIGTERM].map { sig -> DispatchSourceSignal in
+    signal(sig, SIG_IGN)
+    let src = DispatchSource.makeSignalSource(signal: sig, queue: .main)
+    src.setEventHandler { pad.reset(); DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { exit(0) } }
+    src.resume()
+    return src
+}
 print("Neon Hive haptics bridge on ws://127.0.0.1:8765 — waiting for a DualSense…")
 RunLoop.main.run()

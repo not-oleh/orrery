@@ -46,6 +46,7 @@ function nbConnect(){
 const BRIDGE=location.protocol==='file:'||/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)||new URLSearchParams(location.search).has('bridge');
 if(BRIDGE){nbConnect();setInterval(()=>NB.ws?.send('{"hello":1}'),2000)}
 const native=()=>!!(NB.ws&&NB.ctrl);
+addEventListener('pagehide',()=>NB.ws?.send('{"r2":["off"],"l2":["off"]}')); // don't leave a trigger buzzing after the tab closes
 
 // Haptic recipes: [time s, duration s (0 = transient), intensity, sharpness, pan -1 left grip .. 1 right grip].
 // The same recipe also drives the sound, so what you hear matches what you feel.
